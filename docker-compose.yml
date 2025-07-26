@@ -1,26 +1,44 @@
 services:
     app:
-        build:
-            context: './vendor/laravel/sail/runtimes/8.4'
-            dockerfile: Dockerfile
-            args:
-                WWWGROUP: '${WWWGROUP}'
+        extends:
+            file: templates.yml
+            service: base-app
         image: 'sail-8.4/app'
-        extra_hosts:
-            - 'host.docker.internal:host-gateway'
         ports:
             - '${APP_PORT:-80}:80'
             - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
+        depends_on:
+            - pgsql
+            - redis
+            - soketi
+    queue-default:
+        extends:
+            file: templates.yml
+            service: base-app
+        build:
+            context: './docker/8.4'
+            dockerfile: Dockerfile
+        image: 'sail-8.4/custom-app'
         environment:
-            WWWUSER: '${WWWUSER}'
-            LARAVEL_SAIL: 1
-            XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
-            XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
-            IGNITION_LOCAL_SITES_PATH: '${PWD}'
-        volumes:
-            - '.:/var/www/html'
-        networks:
-            - sail
+            CONTAINER_ROLE: queue
+            WORK_ON_QUEUES: default
+            APP_ENV: ${APP_ENV:-local}
+        depends_on:
+            - pgsql
+            - redis
+            - soketi
+    queue-game-loop:
+        extends:
+            file: templates.yml
+            service: base-app
+        build:
+            context: './docker/8.4'
+            dockerfile: Dockerfile
+        image: 'sail-8.4/custom-app'
+        environment:
+            CONTAINER_ROLE: queue
+            WORK_ON_QUEUES: game-loop
+            APP_ENV: ${APP_ENV:-local}
         depends_on:
             - pgsql
             - redis
@@ -36,7 +54,7 @@ services:
             POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
         volumes:
             - 'sail-pgsql:/var/lib/postgresql/data'
-            - './vendor/laravel/sail/database/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql'
+            - './docker/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql'
         networks:
             - sail
         healthcheck:

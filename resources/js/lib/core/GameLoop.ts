@@ -20,7 +20,7 @@ export default class GameLoop {
 		this.scene.start();
 	}
 
-	public update(data) {
+	public render(data) {
 		this.renderer.render(this.scene, this.camera);
 	}
 }

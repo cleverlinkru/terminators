@@ -4,10 +4,10 @@ import Game from "@/lib/core/Game";
 import { useEchoPublic } from "@laravel/echo-vue";
 
 useEchoPublic(
-    "game",
-    ".update",
+    "game-loop",
+    ".render",
     (e) => {
-		Game.instance().getGameLoop().update(e.data);
+		Game.instance().getGameLoop().render(e.data);
     },
 ).listen();
 </script>
